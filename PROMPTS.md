@@ -10,3 +10,23 @@
 - `puzzle.py`
 - `constants.py`
 - `PROMPTS.md`
+
+## 2026-09-28
+
+**Prompt:**
+Ти Senior Python Developer. Додай у файл logic.py дві нові функціональності:
+1. Функцію undo_move(history: list) -> tuple[list[list[int]] | None, bool], яка приймає стек історії станів матриці, витягує останній стан і повертає відновлену матрицю поля та прапорець успіху (True/False). Якщо історія порожня — повертає (None, False).
+2. Функції save_high_score(score: int, filepath: str = "highscore.json") -> bool та load_high_score(filepath: str = "highscore.json") -> int для збереження та завантаження найкращого результату з JSON-файлу.
+
+Вимоги:
+- Всі нові функції повинні містити Type Hints та детальні Docstrings.
+- Додай сувору обробку виняткових ситуацій: від'ємний або некоректний score (TypeError, ValueError), відсутність файлу (FileNotFoundError) та пошкоджений JSON (json.JSONDecodeError).
+- Інтегруй збереження рекорду в ігровий цикл.
+- Код має бути структурованим та читабельним. Перед кожною новою функцією напиши короткий коментар.
+
+Всі зміни коду додай на GitHub у гілку ai/google-antigravity. Промпт запиши у PROMPTS.md і також запуш на GitHub.
+
+**Modified files:**
+- `logic.py`
+- `puzzle.py`
+- `PROMPTS.md`

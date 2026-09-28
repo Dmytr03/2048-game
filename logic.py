@@ -11,6 +11,9 @@ Contains functions for matrix manipulation, game state checking, and movement lo
 # code easily while grading your problem set.
 
 import random
+import json
+import os
+import copy
 import constants as c
 
 #######
@@ -300,3 +303,80 @@ def right(game):
     game = cover_up(game)[0]
     game = reverse(game)
     return game, done
+
+###########
+# New Features #
+###########
+
+def undo_move(history: list) -> tuple[list[list[int]] | None, bool]:
+    """
+    Undo the last move by retrieving the previous matrix state from the history stack.
+    
+    Args:
+        history (list): A list of 2D game boards representing the game history.
+        
+    Returns:
+        tuple[list[list[int]] | None, bool]: (restored_matrix, success) where restored_matrix is the previous state 
+                                            and success is a boolean indicating if undo was successful.
+    """
+    if not history or len(history) <= 1:
+        return None, False
+    
+    # Remove the current state
+    history.pop()
+    # The new current state is now at the top of the stack
+    return copy.deepcopy(history[-1]), True
+
+def save_high_score(score: int, filepath: str = "highscore.json") -> bool:
+    """
+    Save the high score to a JSON file.
+    
+    Args:
+        score (int): The score to save. Must be a non-negative integer.
+        filepath (str): The path to the JSON file. Defaults to "highscore.json".
+        
+    Returns:
+        bool: True if saving was successful.
+        
+    Raises:
+        TypeError: If the score is not an integer.
+        ValueError: If the score is negative.
+    """
+    if not isinstance(score, int):
+        raise TypeError("Score must be an integer.")
+    if score < 0:
+        raise ValueError("Score cannot be negative.")
+        
+    try:
+        with open(filepath, "w", encoding="utf-8") as f:
+            json.dump({"high_score": score}, f, indent=4)
+        return True
+    except Exception as e:
+        print(f"Error saving high score: {e}")
+        return False
+
+def load_high_score(filepath: str = "highscore.json") -> int:
+    """
+    Load the high score from a JSON file.
+    
+    Args:
+        filepath (str): The path to the JSON file. Defaults to "highscore.json".
+        
+    Returns:
+        int: The loaded high score.
+        
+    Raises:
+        FileNotFoundError: If the high score file does not exist.
+        json.JSONDecodeError: If the high score file contains invalid JSON.
+        ValueError: If the loaded score is invalid.
+    """
+    if not os.path.exists(filepath):
+        raise FileNotFoundError(f"High score file '{filepath}' not found.")
+        
+    with open(filepath, "r", encoding="utf-8") as f:
+        data = json.load(f)
+        
+    score = data.get("high_score", 0)
+    if not isinstance(score, int) or score < 0:
+        raise ValueError("Invalid score format in JSON.")
+    return score

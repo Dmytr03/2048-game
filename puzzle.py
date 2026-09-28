@@ -47,6 +47,17 @@ class GameGrid(Frame):
             c.KEY_RIGHT_ALT2: logic.right,
         }
 
+        self.score = 0
+        try:
+            self.high_score = logic.load_high_score()
+        except Exception:
+            self.high_score = 0
+
+        self.score_frame = Frame(self, bg=c.BACKGROUND_COLOR_GAME)
+        self.score_frame.grid()
+        self.score_label = Label(self.score_frame, text=f"Score: {self.score}  High Score: {self.high_score}", font=("Verdana", 16, "bold"), bg=c.BACKGROUND_COLOR_GAME, fg="white")
+        self.score_label.grid(pady=10)
+
         self.grid_cells = []
         self.init_grid()
         self.matrix = logic.new_game(c.GRID_LEN)
@@ -117,10 +128,12 @@ class GameGrid(Frame):
         key = event.keysym
         print(event)
         if key == c.KEY_QUIT: exit()
-        if key == c.KEY_BACK and len(self.history_matrixs) > 1:
-            self.matrix = self.history_matrixs.pop()
-            self.update_grid_cells()
-            print('back on step total step:', len(self.history_matrixs))
+        if key == c.KEY_BACK:
+            restored_matrix, success = logic.undo_move(self.history_matrixs)
+            if success:
+                self.matrix = restored_matrix
+                self.update_grid_cells()
+                print('back on step total step:', len(self.history_matrixs))
         elif key in self.commands:
             self.matrix, done = self.commands[key](self.matrix)
             if done:
@@ -134,6 +147,15 @@ class GameGrid(Frame):
                 if logic.game_state(self.matrix) == 'lose':
                     self.grid_cells[1][1].configure(text="You", bg=c.BACKGROUND_COLOR_CELL_EMPTY)
                     self.grid_cells[1][2].configure(text="Lose!", bg=c.BACKGROUND_COLOR_CELL_EMPTY)
+
+        # Update score (using max tile as score)
+        self.score = max(max(row) for row in self.matrix)
+        if self.score > self.high_score:
+            self.high_score = self.score
+            logic.save_high_score(self.high_score)
+        
+        if hasattr(self, 'score_label'):
+            self.score_label.configure(text=f"Score: {self.score}  High Score: {self.high_score}")
 
     def generate_next(self):
         """
