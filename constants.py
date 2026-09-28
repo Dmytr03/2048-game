@@ -1,3 +1,8 @@
+"""
+Constants for the 2048 Game.
+This module contains the definitions for grid size, colors, fonts, and keyboard mappings used in the game.
+"""
+
 SIZE = 400
 GRID_LEN = 4
 GRID_PADDING = 10

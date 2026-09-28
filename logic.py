@@ -1,3 +1,7 @@
+"""
+Game Logic Module for 2048.
+Contains functions for matrix manipulation, game state checking, and movement logic.
+"""
 #
 # CS1010FC --- Programming Methodology
 #
@@ -19,6 +23,16 @@ import constants as c
 # 1 mark for creating the correct matrix
 
 def new_game(n):
+    """
+    Initialize a new game matrix of size n x n with zeros,
+    and add two initial numbers (2s) to it.
+    
+    Args:
+        n (int): The size of the grid.
+        
+    Returns:
+        list: A 2D list representing the game board.
+    """
     matrix = []
     for i in range(n):
         matrix.append([0] * n)
@@ -36,6 +50,15 @@ def new_game(n):
 # 1 mark for creating the correct loop
 
 def add_two(mat):
+    """
+    Add a new tile with the value 2 at a random empty location (0) in the matrix.
+    
+    Args:
+        mat (list): The current 2D game board.
+        
+    Returns:
+        list: The game board with the newly added 2.
+    """
     a = random.randint(0, len(mat)-1)
     b = random.randint(0, len(mat)-1)
     while mat[a][b] != 0:
@@ -57,6 +80,15 @@ def add_two(mat):
 # 3 marks for correct checking
 
 def game_state(mat):
+    """
+    Check the current state of the game (win, lose, or not over).
+    
+    Args:
+        mat (list): The current 2D game board.
+        
+    Returns:
+        str: 'win' if 2048 is reached, 'not over' if moves are still possible, or 'lose' if no moves left.
+    """
     # check for win cell
     for i in range(len(mat)):
         for j in range(len(mat[0])):
@@ -93,6 +125,15 @@ def game_state(mat):
 # 2 marks for correct solutions that work for all sizes of matrices
 
 def reverse(mat):
+    """
+    Reverse the elements of each row in the matrix.
+    
+    Args:
+        mat (list): The 2D game board.
+        
+    Returns:
+        list: A new 2D list with reversed rows.
+    """
     new = []
     for i in range(len(mat)):
         new.append([])
@@ -111,6 +152,15 @@ def reverse(mat):
 # 2 marks for correct solutions that work for all sizes of matrices
 
 def transpose(mat):
+    """
+    Transpose the given matrix (swap rows with columns).
+    
+    Args:
+        mat (list): The 2D game board.
+        
+    Returns:
+        list: A new 2D list representing the transposed matrix.
+    """
     new = []
     for i in range(len(mat[0])):
         new.append([])
@@ -132,6 +182,15 @@ def transpose(mat):
 # Check the down one. Reverse/transpose if ordered wrongly will give you wrong result.
 
 def cover_up(mat):
+    """
+    Shift all non-zero numbers in the matrix to the left, filling the rest with zeros.
+    
+    Args:
+        mat (list): The 2D game board.
+        
+    Returns:
+        tuple: (new_matrix, done) where done is a boolean indicating if any cells moved.
+    """
     new = []
     for j in range(c.GRID_LEN):
         partial_new = []
@@ -150,6 +209,16 @@ def cover_up(mat):
     return new, done
 
 def merge(mat, done):
+    """
+    Merge adjacent cells of the same value by doubling the left one and zeroing the right one.
+    
+    Args:
+        mat (list): The 2D game board.
+        done (bool): Whether a movement occurred before merging.
+        
+    Returns:
+        tuple: (merged_matrix, done) where done is True if any merge occurred.
+    """
     for i in range(c.GRID_LEN):
         for j in range(c.GRID_LEN-1):
             if mat[i][j] == mat[i][j+1] and mat[i][j] != 0:
@@ -159,6 +228,15 @@ def merge(mat, done):
     return mat, done
 
 def up(game):
+    """
+    Perform a move in the 'Up' direction by transposing, shifting left, merging, shifting left again, and transposing back.
+    
+    Args:
+        game (list): The 2D game board.
+        
+    Returns:
+        tuple: (new_game_matrix, done) indicating the new board state and if any change occurred.
+    """
     print("up")
     # return matrix after shifting up
     game = transpose(game)
@@ -169,6 +247,15 @@ def up(game):
     return game, done
 
 def down(game):
+    """
+    Perform a move in the 'Down' direction.
+    
+    Args:
+        game (list): The 2D game board.
+        
+    Returns:
+        tuple: (new_game_matrix, done) indicating the new board state and if any change occurred.
+    """
     print("down")
     # return matrix after shifting down
     game = reverse(transpose(game))
@@ -179,6 +266,15 @@ def down(game):
     return game, done
 
 def left(game):
+    """
+    Perform a move in the 'Left' direction.
+    
+    Args:
+        game (list): The 2D game board.
+        
+    Returns:
+        tuple: (new_game_matrix, done) indicating the new board state and if any change occurred.
+    """
     print("left")
     # return matrix after shifting left
     game, done = cover_up(game)
@@ -187,6 +283,15 @@ def left(game):
     return game, done
 
 def right(game):
+    """
+    Perform a move in the 'Right' direction.
+    
+    Args:
+        game (list): The 2D game board.
+        
+    Returns:
+        tuple: (new_game_matrix, done) indicating the new board state and if any change occurred.
+    """
     print("right")
     # return matrix after shifting right
     game = reverse(game)

@@ -1,13 +1,31 @@
+"""
+Puzzle Module for 2048.
+Handles the graphical user interface, event bindings, and overall game loop using tkinter.
+"""
 from tkinter import Frame, Label, CENTER
 import random
 import logic
 import constants as c
 
 def gen():
+    """
+    Generate a random index within the grid boundaries.
+    
+    Returns:
+        int: A random integer from 0 to GRID_LEN - 1.
+    """
     return random.randint(0, c.GRID_LEN - 1)
 
 class GameGrid(Frame):
+    """
+    The main GUI class for the 2048 Game, inheriting from tkinter.Frame.
+    Responsible for rendering the board, tracking history, and handling inputs.
+    """
     def __init__(self):
+        """
+        Initialize the GameGrid, setting up the main window, keyboard bindings, 
+        and starting the game state.
+        """
         Frame.__init__(self)
 
         self.grid()
@@ -38,6 +56,9 @@ class GameGrid(Frame):
         self.mainloop()
 
     def init_grid(self):
+        """
+        Initialize the graphical grid layout, creating frames and labels for each cell.
+        """
         background = Frame(self, bg=c.BACKGROUND_COLOR_GAME,width=c.SIZE, height=c.SIZE)
         background.grid()
 
@@ -69,6 +90,10 @@ class GameGrid(Frame):
             self.grid_cells.append(grid_row)
 
     def update_grid_cells(self):
+        """
+        Update the visual state of the grid cells based on the current matrix data.
+        Adjusts text, background color, and font color.
+        """
         for i in range(c.GRID_LEN):
             for j in range(c.GRID_LEN):
                 new_number = self.matrix[i][j]
@@ -83,6 +108,12 @@ class GameGrid(Frame):
         self.update_idletasks()
 
     def key_down(self, event):
+        """
+        Handle keyboard events to move tiles, undo moves, or quit the game.
+        
+        Args:
+            event (tkinter.Event): The key press event object.
+        """
         key = event.keysym
         print(event)
         if key == c.KEY_QUIT: exit()
@@ -105,9 +136,13 @@ class GameGrid(Frame):
                     self.grid_cells[1][2].configure(text="Lose!", bg=c.BACKGROUND_COLOR_CELL_EMPTY)
 
     def generate_next(self):
+        """
+        Generate a new 2 in a random empty spot on the grid.
+        """
         index = (gen(), gen())
         while self.matrix[index[0]][index[1]] != 0:
             index = (gen(), gen())
         self.matrix[index[0]][index[1]] = 2
 
-game_grid = GameGrid()
+if __name__ == '__main__':
+    game_grid = GameGrid()
