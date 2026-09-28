@@ -57,3 +57,20 @@
 **Modified files:**
 - `TEST_RESULTS.md`
 - `PROMPTS.md`
+
+## 2026-09-28
+
+**Prompt:**
+Використовуючи результати аналізу ruff, проведи рефакторинг коду у файлах logic.py, puzzle.py та tests/test_logic.py. Виправ усі невикористані імпорти, відсутні Type Hints, замініть магічні числа на константи з constants.py.
+
+Після рефакторингу:
+1. Повторно запусти unit-тести за допомогою pytest і допиши результати в TEST_RESULTS.md.
+2. Повторно перевір код за допомогою ruff check . і задокументуй стан (переконайся, що відображається "All checks passed!").
+3. Запуш усі зміни, TEST_RESULTS.md та PROMPTS.md у гілку ai/google-antigravity.
+
+**Modified files:**
+- `logic.py`
+- `puzzle.py`
+- `tests/test_logic.py`
+- `TEST_RESULTS.md`
+- `PROMPTS.md`

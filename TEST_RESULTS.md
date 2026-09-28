@@ -166,3 +166,34 @@ Found 7 errors.
    - В `puzzle.py` при завантаженні рекорду використовується `except Exception:`. Краще перехоплювати лише очікувані `(FileNotFoundError, ValueError, json.JSONDecodeError)`.
 3. **Правильне завершення програми (PLR1722):**
    У файлі `puzzle.py` замість вбудованої функції `exit()` (яка призначена для інтерактивної оболонки) слід імпортувати модуль `sys` та використовувати `sys.exit()`.
+
+
+## Post-Refactoring Results
+
+### Pytest Coverage
+
+```text
+============================= test session starts =============================
+platform win32 -- Python 3.14.6, pytest-9.1.1, pluggy-1.6.0
+rootdir: C:\Users\Dmytro\2048-game
+plugins: cov-7.1.0
+collected 11 items
+
+tests\test_logic.py ...........                                          [100%]
+
+=============================== tests coverage ================================
+_______________ coverage: platform win32, python 3.14.6-final-0 _______________
+
+Name       Stmts   Miss  Cover
+------------------------------
+logic.py     135     80    41%
+------------------------------
+TOTAL        135     80    41%
+============================= 11 passed in 0.08s ==============================
+```
+
+### Ruff Verification
+
+```text
+All checks passed!
+```

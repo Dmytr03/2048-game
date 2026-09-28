@@ -2,141 +2,58 @@
 Game Logic Module for 2048.
 Contains functions for matrix manipulation, game state checking, and movement logic.
 """
-#
-# CS1010FC --- Programming Methodology
-#
-# Mission N Solutions
-#
-# Note that written answers are commented out to allow us to run your
-# code easily while grading your problem set.
 
-import random
+import copy
 import json
 import os
-import copy
+import random
+
 import constants as c
 
-#######
-# Task 1a #
-#######
 
-# [Marking Scheme]
-# Points to note:
-# Matrix elements must be equal but not identical
-# 1 mark for creating the correct matrix
-
-def new_game(n):
-    """
-    Initialize a new game matrix of size n x n with zeros,
-    and add two initial numbers (2s) to it.
-    
-    Args:
-        n (int): The size of the grid.
-        
-    Returns:
-        list: A 2D list representing the game board.
-    """
+def new_game(n: int) -> list[list[int]]:
+    """Initialize a new game matrix."""
     matrix = []
     for i in range(n):
-        matrix.append([0] * n)
+        matrix.append([c.EMPTY_CELL] * n)
     matrix = add_two(matrix)
     matrix = add_two(matrix)
     return matrix
 
-###########
-# Task 1b #
-###########
-
-# [Marking Scheme]
-# Points to note:
-# Must ensure that it is created on a zero entry
-# 1 mark for creating the correct loop
-
-def add_two(mat):
-    """
-    Add a new tile with the value 2 at a random empty location (0) in the matrix.
-    
-    Args:
-        mat (list): The current 2D game board.
-        
-    Returns:
-        list: The game board with the newly added 2.
-    """
+def add_two(mat: list[list[int]]) -> list[list[int]]:
+    """Add a new tile to an empty spot."""
     a = random.randint(0, len(mat)-1)
     b = random.randint(0, len(mat)-1)
-    while mat[a][b] != 0:
+    while mat[a][b] != c.EMPTY_CELL:
         a = random.randint(0, len(mat)-1)
         b = random.randint(0, len(mat)-1)
-    mat[a][b] = 2
+    mat[a][b] = c.NEW_TILE
     return mat
 
-###########
-# Task 1c #
-###########
-
-# [Marking Scheme]
-# Points to note:
-# Matrix elements must be equal but not identical
-# 0 marks for completely wrong solutions
-# 1 mark for getting only one condition correct
-# 2 marks for getting two of the three conditions
-# 3 marks for correct checking
-
-def game_state(mat):
-    """
-    Check the current state of the game (win, lose, or not over).
-    
-    Args:
-        mat (list): The current 2D game board.
-        
-    Returns:
-        str: 'win' if 2048 is reached, 'not over' if moves are still possible, or 'lose' if no moves left.
-    """
-    # check for win cell
+def game_state(mat: list[list[int]]) -> str:
+    """Check game state."""
     for i in range(len(mat)):
         for j in range(len(mat[0])):
-            if mat[i][j] == 2048:
+            if mat[i][j] == c.WIN_TILE:
                 return 'win'
-    # check for any zero entries
     for i in range(len(mat)):
         for j in range(len(mat[0])):
-            if mat[i][j] == 0:
+            if mat[i][j] == c.EMPTY_CELL:
                 return 'not over'
-    # check for same cells that touch each other
     for i in range(len(mat)-1):
-        # intentionally reduced to check the row on the right and below
-        # more elegant to use exceptions but most likely this will be their solution
         for j in range(len(mat[0])-1):
             if mat[i][j] == mat[i+1][j] or mat[i][j+1] == mat[i][j]:
                 return 'not over'
-    for k in range(len(mat)-1):  # to check the left/right entries on the last row
+    for k in range(len(mat)-1):
         if mat[len(mat)-1][k] == mat[len(mat)-1][k+1]:
             return 'not over'
-    for j in range(len(mat)-1):  # check up/down entries on last column
+    for j in range(len(mat)-1):
         if mat[j][len(mat)-1] == mat[j+1][len(mat)-1]:
             return 'not over'
     return 'lose'
 
-###########
-# Task 2a #
-###########
-
-# [Marking Scheme]
-# Points to note:
-# 0 marks for completely incorrect solutions
-# 1 mark for solutions that show general understanding
-# 2 marks for correct solutions that work for all sizes of matrices
-
-def reverse(mat):
-    """
-    Reverse the elements of each row in the matrix.
-    
-    Args:
-        mat (list): The 2D game board.
-        
-    Returns:
-        list: A new 2D list with reversed rows.
-    """
+def reverse(mat: list[list[int]]) -> list[list[int]]:
+    """Reverse matrix rows."""
     new = []
     for i in range(len(mat)):
         new.append([])
@@ -144,26 +61,8 @@ def reverse(mat):
             new[i].append(mat[i][len(mat[0])-j-1])
     return new
 
-###########
-# Task 2b #
-###########
-
-# [Marking Scheme]
-# Points to note:
-# 0 marks for completely incorrect solutions
-# 1 mark for solutions that show general understanding
-# 2 marks for correct solutions that work for all sizes of matrices
-
-def transpose(mat):
-    """
-    Transpose the given matrix (swap rows with columns).
-    
-    Args:
-        mat (list): The 2D game board.
-        
-    Returns:
-        list: A new 2D list representing the transposed matrix.
-    """
+def transpose(mat: list[list[int]]) -> list[list[int]]:
+    """Transpose matrix."""
     new = []
     for i in range(len(mat[0])):
         new.append([])
@@ -171,77 +70,38 @@ def transpose(mat):
             new[i].append(mat[j][i])
     return new
 
-##########
-# Task 3 #
-##########
-
-# [Marking Scheme]
-# Points to note:
-# The way to do movement is compress -> merge -> compress again
-# Basically if they can solve one side, and use transpose and reverse correctly they should
-# be able to solve the entire thing just by flipping the matrix around
-# No idea how to grade this one at the moment. I have it pegged to 8 (which gives you like,
-# 2 per up/down/left/right?) But if you get one correct likely to get all correct so...
-# Check the down one. Reverse/transpose if ordered wrongly will give you wrong result.
-
-def cover_up(mat):
-    """
-    Shift all non-zero numbers in the matrix to the left, filling the rest with zeros.
-    
-    Args:
-        mat (list): The 2D game board.
-        
-    Returns:
-        tuple: (new_matrix, done) where done is a boolean indicating if any cells moved.
-    """
+def cover_up(mat: list[list[int]]) -> tuple[list[list[int]], bool]:
+    """Shift all non-empty tiles to the left."""
     new = []
     for j in range(c.GRID_LEN):
         partial_new = []
         for i in range(c.GRID_LEN):
-            partial_new.append(0)
+            partial_new.append(c.EMPTY_CELL)
         new.append(partial_new)
     done = False
     for i in range(c.GRID_LEN):
         count = 0
         for j in range(c.GRID_LEN):
-            if mat[i][j] != 0:
+            if mat[i][j] != c.EMPTY_CELL:
                 new[i][count] = mat[i][j]
                 if j != count:
                     done = True
                 count += 1
     return new, done
 
-def merge(mat, done):
-    """
-    Merge adjacent cells of the same value by doubling the left one and zeroing the right one.
-    
-    Args:
-        mat (list): The 2D game board.
-        done (bool): Whether a movement occurred before merging.
-        
-    Returns:
-        tuple: (merged_matrix, done) where done is True if any merge occurred.
-    """
+def merge(mat: list[list[int]], done: bool) -> tuple[list[list[int]], bool]:
+    """Merge adjacent tiles of the same value."""
     for i in range(c.GRID_LEN):
         for j in range(c.GRID_LEN-1):
-            if mat[i][j] == mat[i][j+1] and mat[i][j] != 0:
+            if mat[i][j] == mat[i][j+1] and mat[i][j] != c.EMPTY_CELL:
                 mat[i][j] *= 2
-                mat[i][j+1] = 0
+                mat[i][j+1] = c.EMPTY_CELL
                 done = True
     return mat, done
 
-def up(game):
-    """
-    Perform a move in the 'Up' direction by transposing, shifting left, merging, shifting left again, and transposing back.
-    
-    Args:
-        game (list): The 2D game board.
-        
-    Returns:
-        tuple: (new_game_matrix, done) indicating the new board state and if any change occurred.
-    """
+def up(game: list[list[int]]) -> tuple[list[list[int]], bool]:
+    """Move up."""
     print("up")
-    # return matrix after shifting up
     game = transpose(game)
     game, done = cover_up(game)
     game, done = merge(game, done)
@@ -249,18 +109,9 @@ def up(game):
     game = transpose(game)
     return game, done
 
-def down(game):
-    """
-    Perform a move in the 'Down' direction.
-    
-    Args:
-        game (list): The 2D game board.
-        
-    Returns:
-        tuple: (new_game_matrix, done) indicating the new board state and if any change occurred.
-    """
+def down(game: list[list[int]]) -> tuple[list[list[int]], bool]:
+    """Move down."""
     print("down")
-    # return matrix after shifting down
     game = reverse(transpose(game))
     game, done = cover_up(game)
     game, done = merge(game, done)
@@ -268,35 +119,17 @@ def down(game):
     game = transpose(reverse(game))
     return game, done
 
-def left(game):
-    """
-    Perform a move in the 'Left' direction.
-    
-    Args:
-        game (list): The 2D game board.
-        
-    Returns:
-        tuple: (new_game_matrix, done) indicating the new board state and if any change occurred.
-    """
+def left(game: list[list[int]]) -> tuple[list[list[int]], bool]:
+    """Move left."""
     print("left")
-    # return matrix after shifting left
     game, done = cover_up(game)
     game, done = merge(game, done)
     game = cover_up(game)[0]
     return game, done
 
-def right(game):
-    """
-    Perform a move in the 'Right' direction.
-    
-    Args:
-        game (list): The 2D game board.
-        
-    Returns:
-        tuple: (new_game_matrix, done) indicating the new board state and if any change occurred.
-    """
+def right(game: list[list[int]]) -> tuple[list[list[int]], bool]:
+    """Move right."""
     print("right")
-    # return matrix after shifting right
     game = reverse(game)
     game, done = cover_up(game)
     game, done = merge(game, done)
@@ -304,78 +137,33 @@ def right(game):
     game = reverse(game)
     return game, done
 
-###########
-# New Features #
-###########
-
-def undo_move(history: list) -> tuple[list[list[int]] | None, bool]:
-    """
-    Undo the last move by retrieving the previous matrix state from the history stack.
-    
-    Args:
-        history (list): A list of 2D game boards representing the game history.
-        
-    Returns:
-        tuple[list[list[int]] | None, bool]: (restored_matrix, success) where restored_matrix is the previous state 
-                                            and success is a boolean indicating if undo was successful.
-    """
+def undo_move(history: list[list[list[int]]]) -> tuple[list[list[int]] | None, bool]:
+    """Undo the last move."""
     if not history or len(history) <= 1:
         return None, False
-    
-    # Remove the current state
     history.pop()
-    # The new current state is now at the top of the stack
     return copy.deepcopy(history[-1]), True
 
 def save_high_score(score: int, filepath: str = "highscore.json") -> bool:
-    """
-    Save the high score to a JSON file.
-    
-    Args:
-        score (int): The score to save. Must be a non-negative integer.
-        filepath (str): The path to the JSON file. Defaults to "highscore.json".
-        
-    Returns:
-        bool: True if saving was successful.
-        
-    Raises:
-        TypeError: If the score is not an integer.
-        ValueError: If the score is negative.
-    """
+    """Save the high score."""
     if not isinstance(score, int):
         raise TypeError("Score must be an integer.")
     if score < 0:
         raise ValueError("Score cannot be negative.")
-        
     try:
         with open(filepath, "w", encoding="utf-8") as f:
             json.dump({"high_score": score}, f, indent=4)
         return True
-    except Exception as e:
+    except OSError as e:
         print(f"Error saving high score: {e}")
         return False
 
 def load_high_score(filepath: str = "highscore.json") -> int:
-    """
-    Load the high score from a JSON file.
-    
-    Args:
-        filepath (str): The path to the JSON file. Defaults to "highscore.json".
-        
-    Returns:
-        int: The loaded high score.
-        
-    Raises:
-        FileNotFoundError: If the high score file does not exist.
-        json.JSONDecodeError: If the high score file contains invalid JSON.
-        ValueError: If the loaded score is invalid.
-    """
+    """Load the high score."""
     if not os.path.exists(filepath):
         raise FileNotFoundError(f"High score file '{filepath}' not found.")
-        
     with open(filepath, "r", encoding="utf-8") as f:
         data = json.load(f)
-        
     score = data.get("high_score", 0)
     if not isinstance(score, int) or score < 0:
         raise ValueError("Invalid score format in JSON.")
