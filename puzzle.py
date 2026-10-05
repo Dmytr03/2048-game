@@ -6,7 +6,7 @@
 частина та зв'язок інтерфейсу з логічним ядром гри.
 """
 
-from tkinter import Frame, Label, CENTER
+from tkinter import Frame, Label, CENTER, messagebox
 import random
 import logic
 import constants as c
@@ -63,7 +63,24 @@ class GameGrid(Frame):
         self.grid_cells = []
         self.init_grid()
         self.matrix = logic.new_game(c.GRID_LEN)
+        self.score = 0
+        try:
+            self.high_score = logic.load_high_score()
+        except FileNotFoundError:
+            # Відсутній файл рекорду є звичайною ситуацією під час першого запуску.
+            self.high_score = 0
+        except (OSError, TypeError, ValueError) as error:
+            # Зберігаємо можливість грати, але явно повідомляємо про непрочитаний рекорд.
+            self.high_score = 0
+            messagebox.showwarning(
+                "High score",
+                f"Не вдалося завантажити рекорд: {error}"
+            )
         self.history_matrixs = []
+        self.history_scores = []
+        self.master.title(
+            f"2048 | Score: {self.score} | Best: {self.high_score}"
+        )
         self.update_grid_cells()
 
         self.mainloop()
@@ -145,16 +162,42 @@ class GameGrid(Frame):
         if key == c.KEY_QUIT:
             exit()
 
-        # Відкат ходу назад за клавішею b, якщо в історії є хоча б один попередній стан.
-        if key == c.KEY_BACK and len(self.history_matrixs) > 1:
-            self.matrix = self.history_matrixs.pop()
-            self.update_grid_cells()
-            print('back on step total step:', len(self.history_matrixs))
+        # Відкат ходу назад відновлює і поле, і рахунок до стану перед ходом.
+        if key == c.KEY_BACK:
+            previous_matrix, undone = logic.undo_move(self.history_matrixs)
+            if undone:
+                self.matrix = previous_matrix
+                self.score = self.history_scores.pop()
+                self.master.title(
+                    f"2048 | Score: {self.score} | Best: {self.high_score}"
+                )
+                self.update_grid_cells()
+                print('back on step total step:', len(self.history_matrixs))
         elif key in self.commands:
-            self.matrix, done = self.commands[key](self.matrix)
+            previous_matrix = [row[:] for row in self.matrix]
+            self.matrix, done, points = self.commands[key](
+                self.matrix,
+                with_score=True
+            )
             if done:
+                self.history_matrixs.append(previous_matrix)
+                self.history_scores.append(self.score)
+                self.score += points
+
+                if self.score > self.high_score:
+                    try:
+                        if logic.save_high_score(self.score):
+                            self.high_score = self.score
+                    except (OSError, TypeError, ValueError) as error:
+                        messagebox.showwarning(
+                            "High score",
+                            f"Не вдалося зберегти рекорд: {error}"
+                        )
+
+                self.master.title(
+                    f"2048 | Score: {self.score} | Best: {self.high_score}"
+                )
                 self.matrix = logic.add_two(self.matrix)
-                self.history_matrixs.append(self.matrix)
                 self.update_grid_cells()
 
                 # Відображення повідомлення про перемогу, якщо плитка 2048 вже створена.
