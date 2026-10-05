@@ -8,7 +8,12 @@
 
 import json
 import random
+from typing import TypeAlias
+
 import constants as c
+
+Matrix: TypeAlias = list[list[int]]
+MoveResult: TypeAlias = tuple[Matrix, bool] | tuple[Matrix, bool, int]
 
 
 # ---------------------------------------------------------------------------
@@ -18,8 +23,8 @@ import constants as c
 
 # Відновлення поля з попереднього стану
 def undo_move(
-    history: list,
-) -> tuple[list[list[int]] | None, bool]:
+    history: list[Matrix],
+) -> tuple[Matrix | None, bool]:
     """Вилучає останній збережений стан зі стеку та повертає його для відкату.
 
     Історія має містити копії матриць поля у порядку їх збереження. Функція
@@ -39,7 +44,7 @@ def undo_move(
 
 
 # Підрахунок очок плиток, які об'єднаються у стиснутих рядках
-def _merged_points(mat: list[list[int]]) -> int:
+def _merged_points(mat: Matrix) -> int:
     """Обчислює очки за злиття у рядках, стиснутих ліворуч.
 
     Перегляд імітує злиття зліва направо: після злиття пара плиток
@@ -53,20 +58,23 @@ def _merged_points(mat: list[list[int]]) -> int:
     Returns:
         Сума значень новоутворених плиток, тобто очки за цей хід.
     """
-    points = 0
+    points = c.INITIAL_SCORE
     for row in mat:
         index = 0
         while index < len(row) - 1:
             if row[index] != 0 and row[index] == row[index + 1]:
-                points += row[index] * 2
-                index += 2
+                points += row[index] * c.TILE_MERGE_FACTOR
+                index += c.INITIAL_TILE_COUNT
             else:
                 index += 1
     return points
 
 
 # Збереження нового найкращого результату у JSON
-def save_high_score(score: int, filepath: str = "highscore.json") -> bool:
+def save_high_score(
+    score: int,
+    filepath: str = "highscore.json",
+) -> bool:
     """Зберігає рекорд у JSON, лише якщо результат перевищує поточний рекорд.
 
     Файл має містити JSON-об'єкт із цілим невід'ємним значенням за ключем
@@ -90,7 +98,7 @@ def save_high_score(score: int, filepath: str = "highscore.json") -> bool:
     """
     if isinstance(score, bool) or not isinstance(score, int):
         raise TypeError("score має бути цілим числом")
-    if score < 0:
+    if score < c.INITIAL_SCORE:
         raise ValueError("score не може бути від'ємним")
     if not isinstance(filepath, str):
         raise TypeError("filepath має бути рядком")
@@ -98,7 +106,7 @@ def save_high_score(score: int, filepath: str = "highscore.json") -> bool:
     try:
         current_high_score = load_high_score(filepath)
     except FileNotFoundError:
-        current_high_score = 0
+        current_high_score = c.INITIAL_SCORE
 
     if score <= current_high_score:
         return False
@@ -143,7 +151,7 @@ def load_high_score(filepath: str = "highscore.json") -> int:
     score = data["high_score"]
     if isinstance(score, bool) or not isinstance(score, int):
         raise TypeError("Збережений high_score має бути цілим числом")
-    if score < 0:
+    if score < c.INITIAL_SCORE:
         raise ValueError("Збережений high_score не може бути від'ємним")
     return score
 
@@ -153,7 +161,7 @@ def load_high_score(filepath: str = "highscore.json") -> int:
 # ---------------------------------------------------------------------------
 
 
-def new_game(n):
+def new_game(n: int) -> Matrix:
     """Створює нову гру 2048 з порожнім квадратним полем.
 
     Функція ініціалізує матрицю розміром n x n, заповнює її нулями,
@@ -166,11 +174,11 @@ def new_game(n):
     Returns:
         list[list[int]]: Матриця гри з двома випадково розміщеними плитками 2.
     """
-    matrix = []
+    matrix: Matrix = []
     for i in range(n):
-        matrix.append([0] * n)
-    matrix = add_two(matrix)
-    matrix = add_two(matrix)
+        matrix.append([c.EMPTY_CELL] * n)
+    for _ in range(c.INITIAL_TILE_COUNT):
+        matrix = add_two(matrix)
     return matrix
 
 
@@ -179,7 +187,7 @@ def new_game(n):
 # ---------------------------------------------------------------------------
 
 
-def add_two(mat):
+def add_two(mat: Matrix) -> Matrix:
     """Випадково додає нову плитку зі значенням 2 у порожню комірку.
 
     Метод вибирає випадкові індекси рядка і стовпця, перевіряє, чи саме
@@ -192,12 +200,12 @@ def add_two(mat):
     Returns:
         list[list[int]]: Матриця з доданою новою плиткою 2.
     """
-    a = random.randint(0, len(mat) - 1)
-    b = random.randint(0, len(mat) - 1)
-    while mat[a][b] != 0:
-        a = random.randint(0, len(mat) - 1)
-        b = random.randint(0, len(mat) - 1)
-    mat[a][b] = 2
+    a = random.randint(c.EMPTY_CELL, len(mat) - 1)
+    b = random.randint(c.EMPTY_CELL, len(mat) - 1)
+    while mat[a][b] != c.EMPTY_CELL:
+        a = random.randint(c.EMPTY_CELL, len(mat) - 1)
+        b = random.randint(c.EMPTY_CELL, len(mat) - 1)
+    mat[a][b] = c.INITIAL_TILE_VALUE
     return mat
 
 
@@ -206,7 +214,7 @@ def add_two(mat):
 # ---------------------------------------------------------------------------
 
 
-def game_state(mat):
+def game_state(mat: Matrix) -> str:
     """Визначає поточний стан гри: перемога, продовження або програш.
 
     Логіка перевіряє три ключові ознаки:
@@ -225,33 +233,33 @@ def game_state(mat):
     """
     # Перевірка на перемогу: клітинка зі значенням 2048 означає, що гравець
     # досяг фінального результату в поточному стані поля.
-    for i in range(len(mat)):
+    for i in range(c.GRID_LEN):
         for j in range(len(mat[0])):
-            if mat[i][j] == 2048:
+            if mat[i][j] == c.WINNING_TILE:
                 return 'win'
 
     # Перевірка наявності порожніх комірок. Якщо є хоча б одне 0, хід можна
     # продовжувати, бо нова плитка ще може з'явитися.
-    for i in range(len(mat)):
+    for i in range(c.GRID_LEN):
         for j in range(len(mat[0])):
-            if mat[i][j] == 0:
+            if mat[i][j] == c.EMPTY_CELL:
                 return 'not over'
 
     # Перевірка на сусідні однакові значення: якщо поруч є однакові плитки,
     # їх можна об'єднати, тому гра не завершена.
-    for i in range(len(mat) - 1):
+    for i in range(c.GRID_LEN - 1):
         for j in range(len(mat[0]) - 1):
             if mat[i][j] == mat[i + 1][j] or mat[i][j + 1] == mat[i][j]:
                 return 'not over'
 
     # Для останнього рядка перевіряємо горизонтальну суміжність.
-    for k in range(len(mat) - 1):
-        if mat[len(mat) - 1][k] == mat[len(mat) - 1][k + 1]:
+    for k in range(c.GRID_LEN - 1):
+        if mat[c.GRID_LEN - 1][k] == mat[c.GRID_LEN - 1][k + 1]:
             return 'not over'
 
     # Для останнього стовпця перевіряємо вертикальну суміжність.
-    for j in range(len(mat) - 1):
-        if mat[j][len(mat) - 1] == mat[j + 1][len(mat) - 1]:
+    for j in range(c.GRID_LEN - 1):
+        if mat[j][c.GRID_LEN - 1] == mat[j + 1][c.GRID_LEN - 1]:
             return 'not over'
 
     return 'lose'
@@ -262,7 +270,7 @@ def game_state(mat):
 # ---------------------------------------------------------------------------
 
 
-def reverse(mat):
+def reverse(mat: Matrix) -> Matrix:
     """Повертає матрицю по горизонталі, змінюючи порядок елементів у кожному рядку.
 
     Дана функція симетрично відображає кожен рядок, щоб потім можна було
@@ -282,7 +290,7 @@ def reverse(mat):
     return new
 
 
-def transpose(mat):
+def transpose(mat: Matrix) -> Matrix:
     """Транспонує матрицю, замінюючи рядки на стовпці та навпаки.
 
     Ця операція дозволяє легко реалізувати рух плиток вверх і вниз, коли для
@@ -308,7 +316,7 @@ def transpose(mat):
 # ---------------------------------------------------------------------------
 
 
-def cover_up(mat):
+def cover_up(mat: Matrix) -> tuple[Matrix, bool]:
     """Стискає всі ненульові значення у рядку до його початку.
 
     Під час ходу плитки «зрушуються» в бік, а нульові комірки відсікаються.
@@ -325,13 +333,13 @@ def cover_up(mat):
     for j in range(c.GRID_LEN):
         partial_new = []
         for i in range(c.GRID_LEN):
-            partial_new.append(0)
+            partial_new.append(c.EMPTY_CELL)
         new.append(partial_new)
     done = False
     for i in range(c.GRID_LEN):
         count = 0
         for j in range(c.GRID_LEN):
-            if mat[i][j] != 0:
+            if mat[i][j] != c.EMPTY_CELL:
                 new[i][count] = mat[i][j]
                 if j != count:
                     done = True
@@ -339,7 +347,7 @@ def cover_up(mat):
     return new, done
 
 
-def merge(mat, done):
+def merge(mat: Matrix, done: bool) -> tuple[Matrix, bool]:
     """Об'єднує сусідні однакові плитки в одному рядку.
 
     Для кожної пари комірок, що стоять поруч, якщо їхні значення рівні і не
@@ -355,14 +363,14 @@ def merge(mat, done):
     """
     for i in range(c.GRID_LEN):
         for j in range(c.GRID_LEN - 1):
-            if mat[i][j] == mat[i][j + 1] and mat[i][j] != 0:
-                mat[i][j] *= 2
-                mat[i][j + 1] = 0
+            if mat[i][j] == mat[i][j+1] and mat[i][j] != c.EMPTY_CELL:
+                mat[i][j] *= c.TILE_MERGE_FACTOR
+                mat[i][j+1] = c.EMPTY_CELL
                 done = True
     return mat, done
 
 
-def up(game, with_score=False):
+def up(game: Matrix, with_score: bool = False) -> MoveResult:
     """Зсуває плитки вгору.
 
     Для реалізації руху вверх поле транспонується, а потім застосовується логіка
@@ -391,7 +399,7 @@ def up(game, with_score=False):
     return game, done
 
 
-def down(game, with_score=False):
+def down(game: Matrix, with_score: bool = False) -> MoveResult:
     """Зсуває плитки вниз.
 
     Для руху вниз застосовується послідовність обертання та перевороту матриці,
@@ -420,7 +428,7 @@ def down(game, with_score=False):
     return game, done
 
 
-def left(game, with_score=False):
+def left(game: Matrix, with_score: bool = False) -> MoveResult:
     """Зсуває плитки вліво.
 
     Ця функція є базовою для усіх інших напрямків: спочатку відбувається
@@ -446,7 +454,7 @@ def left(game, with_score=False):
     return game, done
 
 
-def right(game, with_score=False):
+def right(game: Matrix, with_score: bool = False) -> MoveResult:
     """Зсуває плитки вправо.
 
     Механіка реалізована через перевертання поля перед виконанням лівого руху

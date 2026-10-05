@@ -6,13 +6,16 @@
 частина та зв'язок інтерфейсу з логічним ядром гри.
 """
 
-from tkinter import Frame, Label, CENTER, messagebox
 import random
-import logic
+import sys
+from collections.abc import Callable
+from tkinter import CENTER, Event, Frame, Label, messagebox
+
 import constants as c
+import logic
 
 
-def gen():
+def gen() -> int:
     """Повертає випадковий індекс комірки для розміщення нової плитки.
 
     Повернене значення знаходиться в межах від 0 до GRID_LEN - 1 і використовується
@@ -32,7 +35,7 @@ class GameGrid(Frame):
     показує повідомлення про перемогу або програш.
     """
 
-    def __init__(self):
+    def __init__(self) -> None:
         """Ініціалізує ігрове вікно, зв'язує події клавіатури та запускає цикл Tkinter.
 
         Під час створення об'єкта формуються словник команд, підготовлюється поле,
@@ -45,7 +48,7 @@ class GameGrid(Frame):
         self.master.bind("<Key>", self.key_down)
 
         # Відповідність між клавішами та функціями переміщення плиток.
-        self.commands = {
+        self.commands: dict[str, Callable[..., logic.MoveResult]] = {
             c.KEY_UP: logic.up,
             c.KEY_DOWN: logic.down,
             c.KEY_LEFT: logic.left,
@@ -60,24 +63,24 @@ class GameGrid(Frame):
             c.KEY_RIGHT_ALT2: logic.right,
         }
 
-        self.grid_cells = []
+        self.grid_cells: list[list[Label]] = []
         self.init_grid()
-        self.matrix = logic.new_game(c.GRID_LEN)
-        self.score = 0
+        self.matrix: logic.Matrix = logic.new_game(c.GRID_LEN)
+        self.score = c.INITIAL_SCORE
         try:
             self.high_score = logic.load_high_score()
         except FileNotFoundError:
             # Відсутній файл рекорду є звичайною ситуацією під час першого запуску.
-            self.high_score = 0
+            self.high_score = c.INITIAL_SCORE
         except (OSError, TypeError, ValueError) as error:
             # Зберігаємо можливість грати, але явно повідомляємо про непрочитаний рекорд.
-            self.high_score = 0
+            self.high_score = c.INITIAL_SCORE
             messagebox.showwarning(
                 "High score",
                 f"Не вдалося завантажити рекорд: {error}"
             )
-        self.history_matrixs = []
-        self.history_scores = []
+        self.history_matrixs: list[logic.Matrix] = []
+        self.history_scores: list[int] = []
         self.master.title(
             f"2048 | Score: {self.score} | Best: {self.high_score}"
         )
@@ -85,7 +88,7 @@ class GameGrid(Frame):
 
         self.mainloop()
 
-    def init_grid(self):
+    def init_grid(self) -> None:
         """Створює візуальну сітку комірок для відображення польових плиток.
 
         Метод створює фон ігрового поля, а потім для кожної клітинки формує
@@ -117,13 +120,13 @@ class GameGrid(Frame):
                     bg=c.BACKGROUND_COLOR_CELL_EMPTY,
                     justify=CENTER,
                     font=c.FONT,
-                    width=5,
-                    height=2)
+                    width=c.CELL_LABEL_WIDTH,
+                    height=c.CELL_LABEL_HEIGHT)
                 t.grid()
                 grid_row.append(t)
             self.grid_cells.append(grid_row)
 
-    def update_grid_cells(self):
+    def update_grid_cells(self) -> None:
         """Оновлює графічне представлення матриці гри на екрані.
 
         Метод проходить по всіх клітинках поля, відображає значення чисел або
@@ -134,7 +137,7 @@ class GameGrid(Frame):
         for i in range(c.GRID_LEN):
             for j in range(c.GRID_LEN):
                 new_number = self.matrix[i][j]
-                if new_number == 0:
+                if new_number == c.EMPTY_CELL:
                     self.grid_cells[i][j].configure(text="", bg=c.BACKGROUND_COLOR_CELL_EMPTY)
                 else:
                     self.grid_cells[i][j].configure(
@@ -144,7 +147,7 @@ class GameGrid(Frame):
                     )
         self.update_idletasks()
 
-    def key_down(self, event):
+    def key_down(self, event: Event) -> None:
         """Обробляє натискання клавіатури та запускає відповідний хід гри.
 
         Значення event.keysym використовується для визначення призначеної команди:
@@ -160,7 +163,7 @@ class GameGrid(Frame):
 
         # Вихід із гри за клавішею Escape.
         if key == c.KEY_QUIT:
-            exit()
+            sys.exit()
 
         # Відкат ходу назад відновлює і поле, і рахунок до стану перед ходом.
         if key == c.KEY_BACK:
@@ -202,15 +205,27 @@ class GameGrid(Frame):
 
                 # Відображення повідомлення про перемогу, якщо плитка 2048 вже створена.
                 if logic.game_state(self.matrix) == 'win':
-                    self.grid_cells[1][1].configure(text="You", bg=c.BACKGROUND_COLOR_CELL_EMPTY)
-                    self.grid_cells[1][2].configure(text="Win!", bg=c.BACKGROUND_COLOR_CELL_EMPTY)
+                    self.grid_cells[c.GAME_MESSAGE_ROW][c.GAME_MESSAGE_FIRST_COLUMN].configure(
+                        text="You",
+                        bg=c.BACKGROUND_COLOR_CELL_EMPTY
+                    )
+                    self.grid_cells[c.GAME_MESSAGE_ROW][c.GAME_MESSAGE_SECOND_COLUMN].configure(
+                        text="Win!",
+                        bg=c.BACKGROUND_COLOR_CELL_EMPTY
+                    )
 
                 # Відображення повідомлення про поразку, якщо більше немає доступних ходів.
                 if logic.game_state(self.matrix) == 'lose':
-                    self.grid_cells[1][1].configure(text="You", bg=c.BACKGROUND_COLOR_CELL_EMPTY)
-                    self.grid_cells[1][2].configure(text="Lose!", bg=c.BACKGROUND_COLOR_CELL_EMPTY)
+                    self.grid_cells[c.GAME_MESSAGE_ROW][c.GAME_MESSAGE_FIRST_COLUMN].configure(
+                        text="You",
+                        bg=c.BACKGROUND_COLOR_CELL_EMPTY
+                    )
+                    self.grid_cells[c.GAME_MESSAGE_ROW][c.GAME_MESSAGE_SECOND_COLUMN].configure(
+                        text="Lose!",
+                        bg=c.BACKGROUND_COLOR_CELL_EMPTY
+                    )
 
-    def generate_next(self):
+    def generate_next(self) -> None:
         """Генерує нову плитку 2 у випадковій порожній комірці.
 
         Метод перебирає випадкові координати, доки не знайде вільну клітинку, а
@@ -218,9 +233,9 @@ class GameGrid(Frame):
         генерації нової плитки, який може використовуватися в різних сценаріях.
         """
         index = (gen(), gen())
-        while self.matrix[index[0]][index[1]] != 0:
+        while self.matrix[index[0]][index[1]] != c.EMPTY_CELL:
             index = (gen(), gen())
-        self.matrix[index[0]][index[1]] = 2
+        self.matrix[index[0]][index[1]] = c.INITIAL_TILE_VALUE
 
 
 # Ініціалізація графічного вікна гри в момент імпорту модуля.

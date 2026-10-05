@@ -133,3 +133,36 @@ Found 6 errors.
 4. Щоб такі порушення виявлялися автоматично, додати Ruff до конфігурації проєкту та CI; за потреби форматування імпортів і тестових файлів виконувати `ruff check --fix` після перегляду diff.
 
 Цей звіт фіксує поточні знахідки; аналіз виконаний без автоматичного виправлення файлів.
+
+## Повторна перевірка після рефакторингу
+
+- **Дата:** 2026-10-05
+- **Охоплення:** `logic.py`, `puzzle.py`, `constants.py`, `tests/test_logic.py`
+- **Результат pytest:** 32 passed in 0.11s
+- **Покриття `logic.py`:** 100% (165 statements, 0 missed)
+- **Команда lint:** `ruff check .`
+- **Результат Ruff:** `All checks passed!` (код завершення 0)
+- **Додаткова перевірка:** `python -m py_compile logic.py puzzle.py constants.py tests\test_logic.py` та `git diff --check` пройшли без помилок.
+
+```text
+============================= test session starts =============================
+platform win32 -- Python 3.14.6, pytest-9.1.1, pluggy-1.6.0
+rootdir: .
+plugins: cov-7.1.0
+collected 32 items
+
+tests\test_logic.py ................................                     [100%]
+
+=============================== tests coverage ================================
+Name       Stmts   Miss  Cover   Missing
+----------------------------------------
+logic.py     165      0   100%
+----------------------------------------
+TOTAL        165      0   100%
+============================= 32 passed in 0.11s ==============================
+```
+
+```text
+$ ruff check .
+All checks passed!
+```

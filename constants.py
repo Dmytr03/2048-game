@@ -11,6 +11,27 @@ SIZE = 400
 # Кількість рядків і стовпців ігрового поля.
 GRID_LEN = 4
 
+# Значення порожньої клітинки та початкової плитки.
+EMPTY_CELL = 0
+INITIAL_TILE_VALUE = 2
+INITIAL_TILE_COUNT = 2
+
+# Значення плитки, що завершує гру перемогою, та множник під час злиття.
+WINNING_TILE = 2048
+TILE_MERGE_FACTOR = 2
+
+# Початковий рахунок нової гри.
+INITIAL_SCORE = 0
+
+# Параметри текстових міток у клітинках.
+CELL_LABEL_WIDTH = 5
+CELL_LABEL_HEIGHT = 2
+
+# Координати міток для повідомлення про результат гри.
+GAME_MESSAGE_ROW = 1
+GAME_MESSAGE_FIRST_COLUMN = 1
+GAME_MESSAGE_SECOND_COLUMN = 2
+
 # Відстань між клітинками у сітці.
 GRID_PADDING = 10
 
